@@ -3,7 +3,7 @@ import asyncio
 from aiohttp import web
 from pyrogram import idle
 from mega.telegram import MegaDLBot
-from mega.webserver import web_server
+#from mega.webserver import web_server
 from mega.common import Common
 
 
