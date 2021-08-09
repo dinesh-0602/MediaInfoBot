@@ -41,21 +41,6 @@
             "description": "A list of users (user ids) allowed to use the bot. Please enter in the format [123123123, 321321321]",
             "required": true
         },
-        "IS_ATLAS": {
-            "description": "Setting this to ANYTHING will make the bot use MongoDB Atlas."
-        },
-        "DATABASE_DB_HOST": {
-            "description": "Watch this video to understand what database is: https://youtu.be/vgzMacnI5Z8"
-        },
-        "DATABASE_DB_USERNAME": {
-            "description": "Watch this video to understand what database is: https://youtu.be/vgzMacnI5Z8"
-        },
-        "DATABASE_DB_PASSWORD": {
-            "description": "Watch this video to understand what database is: https://youtu.be/vgzMacnI5Z8"
-        },
-        "DATABASE_DB_NAME": {
-            "description": "Watch this video to understand what database is: https://youtu.be/vgzMacnI5Z8"
-        },
         "WEB_SERVER_BIND_ADDRESS":{
             "description": "Address with Web Server to bind with",
             "value": "0.0.0.0"
