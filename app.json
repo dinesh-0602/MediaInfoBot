@@ -39,7 +39,7 @@
         },
         "ALLOWED_USERS": {
             "description": "A list of users (user ids) allowed to use the bot. Please enter in the format [123123123, 321321321]",
-            "required": true
+            "value": "", "662933911"
         },
         "WEB_SERVER_BIND_ADDRESS":{
             "description": "Address with Web Server to bind with",
