@@ -24,6 +24,79 @@ from ..utils import filters
 youtube_dl_links = ["youtube", "youtu", "facebook", "soundcloud"]
 
 
+@Client.on_message(filters.private & (filters.document | filters.video | filters.audio | filters.voice | filters.video_note))   
+async def url_process(m: Message):
+    #user_details = await MegaUsers().get_user(m.from_user.id)
+    
+    try:
+        header_info = await Downloader.get_headers(m.text)
+        file_type_raw = header_info.get("Content-Type") if "Content-Type" in header_info else "None/None"
+        file_type_split = file_type_raw.split("/")[0]
+        file_content_disposition = header_info.get("content-disposition")
+        try:
+            file_name_f_headers = re.findall("filename=(.+)", file_content_disposition)[
+                0] if file_content_disposition else None
+        except Exception as e:
+            logging.error(e)
+            file_name_f_headers = None
+
+        file_ext_f_name = os.path.splitext(str(file_name_f_headers).replace('"', ""))[1]
+
+        if header_info is None:
+            await m.reply_text(
+                f"I do not know the details of the file to download the file! {emoji.MAN_RAISING_HAND_DARK_SKIN_TONE}"
+            )
+        elif (tldextract.extract(m.text)).domain not in youtube_dl_links:
+            file_size = header_info.get("Content-Length") if "Content-Length" in header_info else None
+            if file_size is not None and int(file_size) > 2147483648:
+                await m.reply_text(
+                    f"Well that file is bigger than I can upload to telegram! {emoji.MAN_SHRUGGING_DARK_SKIN_TONE}"
+                )
+            else:
+                inline_buttons = [
+                    [
+                        InlineKeyboardButton(text=f"{emoji.FLOPPY_DISK} Download",
+                                             callback_data=f"download_{m.chat.id}_{m.message_id}"),
+                        InlineKeyboardButton(text=f"{emoji.PENCIL} Rename",
+                                             callback_data=f"rename_{m.chat.id}_{m.message_id}")
+                    ]
+                ]
+                if file_type_split.lower() == "video":
+                    inline_buttons.append([
+                        InlineKeyboardButton(text=f"{emoji.LIGHT_BULB} Media Info",
+                                             callback_data=f"info_{m.chat.id}_{m.message_id}"),
+                        InlineKeyboardButton(text=f"{emoji.FRAMED_PICTURE} Screens",
+                                             callback_data=f"screens_{m.chat.id}_{m.message_id}")
+                    ])
+                #elif file_ext_f_name == ".torrent" and ('seedr_username' in user_details) and \
+                        #('seedr_passwd' in user_details):
+                    #inline_buttons.append([
+                        #InlineKeyboardButton(text=f"{emoji.TORNADO} Download Torrent",
+                                             #callback_data=f"torrent_{m.chat.id}_{m.message_id}")
+                    #])
+                await m.reply_text(
+                    text="What would you like to do with this file?",
+                    reply_markup=InlineKeyboardMarkup(inline_buttons)
+                )
+        elif (tldextract.extract(m.text)).domain in youtube_dl_links:
+            inline_buttons = [
+                [
+                    InlineKeyboardButton(text=f"{emoji.LOUDSPEAKER} Extract Audio",
+                                         callback_data=f"ytaudio_{m.chat.id}_{m.message_id}"),
+                    InlineKeyboardButton(text=f"{emoji.VIDEOCASSETTE} Extract Video",
+                                         callback_data=f"ytvid_{m.chat.id}_{m.message_id}")
+                ],
+                [
+                    InlineKeyboardButton(text=f"{emoji.LIGHT_BULB} Media Info",
+                                         callback_data=f"ytmd_{m.chat.id}_{m.message_id}")
+                ]
+            ]
+            await m.reply_text(
+                text="What would you like to do with this file?",
+                reply_markup=InlineKeyboardMarkup(inline_buttons)
+            )
+
+
 @Client.on_callback_query(filters.callback_query("ytvid"), group=0)
 async def callback_ytvid_handler(c: Client, cb: CallbackQuery):
     params = cb.payload.split('_')
