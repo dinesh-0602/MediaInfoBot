@@ -58,11 +58,11 @@
         },
         "WEB_SERVER_BIND_ADDRESS":{
             "description": "Address with Web Server to bind with",
-            "value": 0.0.0.0
+            "value": "0.0.0.0"
         },
         "WEB_SERVER_PORT":{
             "description": "Port for the Web Server to listen to",
-            "value": 8080
+            "value": "8080"
         },
         "WEB_SERVER_FQDN":{
             "description": "Fully Qualified Name for Webserver to stream files",
