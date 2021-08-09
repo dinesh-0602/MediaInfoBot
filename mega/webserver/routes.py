@@ -5,7 +5,7 @@ import mimetypes
 from aiohttp import web
 from mega.common import Common
 from mega.telegram import MegaDLBot
-from mega.helpers.seerd_api import SeedrAPI
+#from mega.helpers.seerd_api import SeedrAPI
 from mega.telegram.utils.custom_download import TGCustomYield, chunk_size, offset_fix
 
 routes = web.RouteTableDef()
