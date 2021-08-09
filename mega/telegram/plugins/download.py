@@ -65,31 +65,6 @@ async def callback_ytmd_handler(c: Client, cb: CallbackQuery):
     )
 
 
-
-@Client.on_callback_query(filters.callback_query("torrent"), group=0)
-async def callback_torrent_handler(c: Client, cb: CallbackQuery):
-    params = cb.payload.split('_')
-    cb_chat = int(params[0]) if len(params) > 0 else None
-    cb_message_id = int(params[1]) if len(params) > 1 else None
-
-    cb_message = await c.get_messages(cb_chat, cb_message_id) if cb_message_id is not None else None
-
-    await cb.answer()
-    await call_seedr_download(cb_message, "other")
-
-
-@Client.on_callback_query(filters.callback_query("magnet"), group=0)
-async def callback_magnet_handler(c: Client, cb: CallbackQuery):
-    params = cb.payload.split('_')
-    cb_chat = int(params[0]) if len(params) > 0 else None
-    cb_message_id = int(params[1]) if len(params) > 1 else None
-
-    cb_message = await c.get_messages(cb_chat, cb_message_id) if cb_message_id is not None else None
-
-    await cb.answer()
-    await call_seedr_download(cb_message, "magnet")
-
-
 @Client.on_callback_query(filters.callback_query("download"), group=0)
 async def callback_download_handler(c: Client, cb: CallbackQuery):
     params = cb.payload.split('_')
@@ -170,105 +145,6 @@ async def reply_message_handler(c: Client, m: Message):
             await Downloader().download_file(org_message.text, ack_message, new_file_name)
 
 
-@Client.on_callback_query(filters.callback_query("sdlc"), group=2)
-async def callback_sdlc_handler(c: Client, cb: CallbackQuery):
-    await cb.answer()
-
-    params = cb.payload.split('_')
-    folder_id = params[0] if len(params) > 0 else None
-    chat_id = int(params[1]) if len(params) > 1 else None
-    org_msg_id = int(params[2]) if len(params) > 2 else None
-    ack_msg_id = int(params[3]) if len(params) > 3 else None
-
-    org_msg = await c.get_messages(chat_id, org_msg_id)
-    ack_msg = await c.get_messages(chat_id, ack_msg_id)
-
-    folder_details = await SeedrAPI().get_folder(folder_id, cb.message.chat.id)
-    await SeedrAPI().download_folder(folder_details['id'], ack_msg, org_msg, "other")
-
-
-@Client.on_callback_query(filters.callback_query("unsd"), group=2)
-async def callback_unsd_handler(c: Client, cb: CallbackQuery):
-    await cb.answer()
-
-    params = cb.payload.split('_')
-    folder_id = params[0] if len(params) > 0 else None
-    chat_id = int(params[1]) if len(params) > 1 else None
-    org_msg_id = int(params[2]) if len(params) > 2 else None
-    ack_msg_id = int(params[3]) if len(params) > 3 else None
-
-    org_msg = await c.get_messages(chat_id, org_msg_id)
-    ack_msg = await c.get_messages(chat_id, ack_msg_id)
-
-    folder_details = await SeedrAPI().get_folder(folder_id, cb.message.chat.id)
-    await SeedrAPI().download_folder(folder_details['id'], ack_msg, org_msg, "compressed")
-
-
-async def call_seedr_download(msg: Message, torrent_type: str):
-    if torrent_type == "magnet":
-        ack_msg = await msg.reply_text(
-            "About to add the magnet link to seedr."
-        )
-
-        tr_process = await SeedrAPI().add_url(msg.text, "magnet", msg.chat.id)
-    else:
-        ack_msg = await msg.reply_text(
-            "About to add the link to seedr."
-        )
-        tr_process = await SeedrAPI().add_url(msg.text, "other", msg.chat.id)
-
-    if tr_process["result"] is True:
-        try:
-            while True:
-                await asyncio.sleep(4)
-                tr_progress = await SeedrAPI().get_torrent_details(tr_process["user_torrent_id"], msg.chat.id)
-                if tr_progress["progress"] < 100:
-                    try:
-                        await ack_msg.edit_text(
-                            f"Uploading to Seedr: \n"
-                            f"Progress: {tr_progress['progress']}% | "
-                            f"Size: {size.format_size(tr_progress['size'], binary=True)}"
-                        )
-                    except MessageNotModified as e:
-                        logging.error(e)
-                else:
-                    await asyncio.sleep(10)
-                    tr_progress = await SeedrAPI().get_torrent_details(tr_process["user_torrent_id"], msg.chat.id)
-                    await ack_msg.edit_text("How would you like to upload the contents?")
-                    await ack_msg.edit_reply_markup(
-                        InlineKeyboardMarkup(
-                            [
-                                [
-                                    InlineKeyboardButton(text=f"{emoji.PACKAGE} Compressed",
-                                                         callback_data=f"sdlc_{str(tr_progress['folder_created'])}"
-                                                                       f"_{msg.chat.id}_{msg.message_id}"
-                                                                       f"_{ack_msg.message_id}")
-                                ],
-                                [
-                                    InlineKeyboardButton(text=f"{emoji.CARD_FILE_BOX} UnCompressed",
-                                                         callback_data=f"unsd_{str(tr_progress['folder_created'])}"
-                                                                       f"_{msg.chat.id}_{msg.message_id}"
-                                                                       f"_{ack_msg.message_id}")
-                                ]
-                            ]
-                        )
-                    )
-                    break
-        except Exception as e:
-            logging.error(e)
-    else:
-        try:
-            error = tr_process['error']
-        except KeyError:
-            error = None
-
-        logging.error(error)
-        await ack_msg.edit_text(
-            f"An error occurred:\n<pre>{error}</pre>",
-            parse_mode="html"
-        )
-
-
 @Client.on_message(filters.private & (filters.document | filters.video | filters.audio), group=4)
 async def media_receive_handler(c: Client, m: Message):
     user_settings = await MegaUsers().get_user(m.from_user.id)
@@ -308,34 +184,3 @@ async def callback_file_rename_proc_handler(c: Client, cb: CallbackQuery):
     )
 
 
-@Client.on_message(filters.reply & filters.text, group=5)
-async def reply_media_rename_handler(c: Client, m: Message):
-    user_settings = await MegaUsers().get_user(m.from_user.id)
-
-    func_message_obj = str(m.reply_to_message.text).splitlines()[0].split("_")
-    if len(func_message_obj) > 1:
-        func = func_message_obj[0]
-
-        if func == "FRNM":
-            org_message_id = int(str(func_message_obj[1]).replace(":", ""))
-            org_message = await c.get_messages(m.chat.id, org_message_id)
-            ack_msg = await m.reply_text(
-                "Processing to file to rename it."
-            )
-            if "f_rename_type" in user_settings:
-                if user_settings["f_rename_type"] == "memory":
-                    m_file = await TGCustomYield().download_as_bytesio(org_message)
-                    await UploadFiles().upload_file(m_file, ack_msg, "", "other", "bytesIO", m.text)
-                else:
-                    temp_dir = f"working_dir/{secrets.token_hex(2)}"
-                    if not os.path.exists(f"mega/{temp_dir}"):
-                        os.mkdir(f"mega/{temp_dir}")
-
-                    m_file = f"{temp_dir}/{m.text}"
-
-                    await c.download_media(
-                        message=org_message,
-                        file_name=m_file
-                    )
-
-                    await UploadFiles().upload_file(f"mega/{m_file}", ack_msg, "", "other", "disk", m.text)
