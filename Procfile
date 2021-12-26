@@ -1,1 +1,1 @@
-web: python -m mega
+web: python3 -m mega
